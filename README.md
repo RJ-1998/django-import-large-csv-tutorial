@@ -7,7 +7,7 @@
   </div>
 </div>
 
->### You can also read the whole article on [my blog](https://rishabh-tech-blog.vercel.app/blog/how-to-import-large-csv-file-in-django-admin)
+> ### You can also read the whole article on [my blog](https://rishabh-tech-blog.vercel.app/blog/how-to-import-large-csv-file-in-django-admin)
 
 ## Overview
 
@@ -15,7 +15,7 @@ In this tutorial, we will look at an alternative approach to import csv files in
 
 ## Introduction
 
-If you have worked on django, then there's a high probability that you have already used the popular `django-import-export` library which works smoothly in django-admin and gives developers lots of freedom to import/export all sorts of files. (If you haven't seen it do check it out `here` because we'll be using it 😉).
+If you have worked on django, then there's a high probability that you have already used the popular `django-import-export` library which works smoothly in django-admin and gives developers lots of freedom to import/export all sorts of files. (If you haven't seen it do check it out [here](https://django-import-export.readthedocs.io/en/latest/) because we'll be using it 😉).
 
 Although it's good for importing model-specific files as it gives the specific headers for that particular model. But what if you want to import data that leads to different tables in your database and you want to perform some custom logic and data validation. Also, suppose you want to import very large files (say 20k rows), it will be computation heavy and will run a lot of queries. I came across the same requirement while I was working on a project and using default django-import-export is not the way to do it. We have to CUSTOMIZE it!
 
@@ -78,8 +78,7 @@ class CharactersAdmin(ImportExportModelAdmin,admin.ModelAdmin):
 ```
 
 If you have done the setup correctly then you should be
-able to see the **import/export** buttons in the django admin
-`attach-image`.
+able to see the **import/export** buttons in the django admin.
 
 ## Create a template
 
@@ -117,7 +116,7 @@ class CharactersAdmin(ImportExportModelAdmin,admin.ModelAdmin):
 ```
 
 Now create a new html template called `import_starwars_characters.html`
-inside the `templates/admin` folder in your app. You can find the template `here` in my git repo.
+inside the `templates/admin` folder in your app. You can find the template [here](https://github.com/RJ-1998/django-import-large-csv-tutorial/blob/master/starwars/templates/admin/import_starwars_characters.html) in my git repo.
 
 Once you're done then you'll be able to see your custom template
 when you click the import button.
