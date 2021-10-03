@@ -7,10 +7,11 @@
   </div>
 </div>
 
+> You can also read the whole article on [my blog](https://rishabh-tech-blog.vercel.app/blog/how-to-import-large-csv-file-in-django-admin)
+
 ## Overview
 
-In this tutorial, we will look at an alternative approach to import csv files in django-admin. This tutorial is intended for intermediate to advanced level developers. All the code related to the tutorial is available in the repo
-`repo-link-to-be-inserted`.
+In this tutorial, we will look at an alternative approach to import csv files in django-admin. This tutorial is intended for intermediate to advanced level developers. All the code related to the tutorial is available in the repo.
 
 ## Introduction
 
