@@ -1,0 +1,253 @@
+{% extends 'admin/base_site.html' %} {% load static %} {% block content %}
+<head>
+  <link rel="stylesheet" href="{% static 'starwars/css/style.css' %}" />
+</head>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+  function getChildren($row) {
+    var children = [];
+    while ($row.next().hasClass("child")) {
+      console.log("clicked!!");
+      children.push($row.next());
+      $row = $row.next();
+    }
+    return children;
+  }
+
+  function handlecollapse(e) {
+    var children = getChildren(e);
+    $.each(children, function () {
+      $(this).toggle();
+    });
+  }
+</script>
+
+<div>
+  <h1>{{form_title}}</h1>
+  <h2>{{description}}</h2>
+  <br />
+  <br />
+  <form method="POST" id="csv-form" enctype="multipart/form-data">
+    {% csrf_token %}
+    <label for="csvfile">Select a CSV file:</label>
+    <input type="file" id="csvfile" name="csvfile" />
+    <br /><br />
+    <button class="uploadBtn" id="submit" disabled>Upload CSV</button>
+    <button
+      class="cancelBtn"
+      type="button"
+      onclick="javascript:history.back();"
+    >
+      Cancel
+    </button>
+  </form>
+  <br />
+  <br />
+  <h1>Upload results for file <span id="file_name"></span></h1>
+  <div
+    style="display: flex; justify-content: space-between; margin-bottom: 10px"
+  >
+    <span style="font-weight: bold; font-size: 18px"
+      >Total entries: <span id="entries"></span
+    ></span>    
+    <button class="downloadBtn" id="downloadReport" style="display: none">
+      Download Report
+    </button>
+  </div>
+  <table>
+    <tr>
+      <th>Character</th>
+      <th>Status</th>
+      <th>Message</th>
+    </tr>
+  </table>
+  <div id="spinner" class="loader" style="display: none"></div>
+</div>
+<br />
+{{endpoint|json_script:"endpoint"}}
+<script>
+  $(document).ready(() => {
+    let headers = []; // to store csv file headers
+    let allData = []; // to store all the rows except headers
+    let file_name = "";
+    let totalentries = 0;
+    // get the endpoint we want our AJAX call to hit
+    // let endpoint = $("#endpoint").text();
+    let endpoint = JSON.parse($("#endpoint").text())
+
+    // <!--  pagination variables-->
+    let pageSize = 10;
+    let pages = 0;
+    // it will store limit-offset objects
+    let pageObjs = [];
+
+    // <!--  promise to read csv so that submit button gets enabled-->
+    // <!--  only after file has been read-->
+
+    function readCSVPromise(lines) {
+      return new Promise((resolve, reject) => {
+        // store headers and rows
+        headers = lines.slice(0, lines.indexOf("\n")).split(",");
+        let data = lines.slice(lines.indexOf("\n") + 1).split("\n");
+        data.forEach((row) => {
+          let x = row.split(",");
+          if (x.length > 1) {
+            allData.push(x);
+          }
+        });
+        if (data.length > 0) {
+          resolve(true);
+        } else {
+          reject(false);
+        }
+      });
+    }
+
+    //<!--  read csv file and perform pagination of rows-->
+
+    $("#csvfile").change((e) => {
+      // regex to validate file name and extension
+      var regex = /^([a-zA-Z0-9\s_\\.\-:])+(.csv)$/;
+      if (regex.test($("#csvfile").val().toLowerCase())) {
+        // initialize javascript's FileReader
+        // Read more here https://developer.mozilla.org/en-US/docs/Web/API/FileReader
+        var reader = new FileReader();
+        reader.onload = function (e) {
+          var lines = e.target.result;
+          // start storing all the data
+          readCSVPromise(lines)
+            .then((result) => {
+              // when done start paginating the data
+              pages = Math.ceil(allData.length / pageSize);
+              for (let pageNo = 1; pageNo <= pages; pageNo++) {
+                let limit = pageNo * pageSize;
+                let offset = pageNo * pageSize - pageSize;
+                if (limit >= allData.length) {
+                  limit = allData.length;
+                }
+                pageObjs.push({ limit: limit, offset: offset });
+              }
+              // enable submit button
+              $("#submit").prop("disabled", false);
+            })
+            .catch((result) => {
+              $("#submit").prop("disabled", true);
+            });
+        };
+        file_name = e.target.files.item(0).name;
+        reader.readAsText(e.target.files.item(0));
+      } else {
+        alert("Please select a csv file!!");
+      }
+    });
+
+    //<!--  Paginated AJAX call to initiate file upload  -->
+
+    function callImportRequest(pageObj) {
+      let deferred = $.Deferred();
+      let offset = pageObj.offset;
+      let limit = pageObj.limit;
+      // contains paginated data
+      let rows = allData.slice(offset, limit);
+      $.ajax({
+        type: "POST",
+        dataType: "json",
+        url: endpoint,
+        data: {
+          file_name: JSON.stringify(file_name),
+          csv_headers: JSON.stringify(headers),
+          rows: JSON.stringify(rows),
+          page_no: JSON.stringify(offset),
+          csrfmiddlewaretoken: $("input[name=csrfmiddlewaretoken]").val(),
+          action: "post",
+        },
+        beforeSend: () => {
+          $("#spinner").show();
+        },
+        success: function (data) {
+          // here we will update our DOM to show the object status
+          $("#file_name").text(data.file);
+          totalentries += data.entries;
+          $("#entries").text(totalentries);
+          $("table").append(
+            `<tr class="parent" onclick="handlecollapse($(this))"><td class="checkpoint">Entries: ${offset} to ${limit}</td><td></td><td></td></tr>`
+          );
+          data.results.forEach((obj) => {
+            $("table").append(
+              `<tr class="child"><td>${obj.character}</td><td>${obj.status}</td><td>${obj.msg}</td></tr>`
+            );
+          });
+          deferred.resolve(data);
+        },
+        complete: () => {
+          $("#spinner").hide();
+        },
+      });
+      return deferred.promise();
+    }
+
+    //<!--  Perform multiple sequential AJAX Calls on submit click event  -->
+
+    let looper = $.Deferred().resolve();
+    $("#submit").click((e) => {
+      e.preventDefault();
+      // $.when.apply is the way to call multiple AJAX calls
+      // apply functions accepts two arguments => (this,array of requests)
+      // for array of requests we are using map function to loop over pageObjs
+      // that returns AJAX request
+      $.when
+        .apply(
+          $,
+          $.map(pageObjs, (pageObj, i) => {
+            looper = looper.then(() => {
+              return callImportRequest(pageObj);
+            });
+            return looper;
+          })
+        )
+        .then((res) => {
+          // once all requests are finished then enable download report button
+          console.log("Upload Finished!!");
+          $("#downloadReport").show();
+        })
+        .catch((err) => {
+          console.log(err);
+        });
+    });
+
+    $("#downloadReport").click(() => {
+      var html = document.querySelector("table").outerHTML;
+      export_table_to_csv(html, file_name.split(".csv")[0] + "_report.csv");
+    });
+
+    function export_table_to_csv(html, filename) {
+      var csv = [];
+      var rows = document.querySelectorAll("table tr");
+
+      for (var i = 0; i < rows.length; i++) {
+        var row = [],
+          cols = rows[i].querySelectorAll("td, th");
+
+        for (var j = 0; j < cols.length; j++) row.push(cols[j].innerText);
+
+        csv.push(row.join(","));
+      }
+      download_csv(csv.join("\n"), filename);
+    }
+
+    function download_csv(csv, filename) {
+      var csvFile;
+      var downloadLink;
+
+      csvFile = new Blob([csv], { type: "text/csv" });
+      downloadLink = document.createElement("a");
+      downloadLink.download = filename;
+      downloadLink.href = window.URL.createObjectURL(csvFile);
+      downloadLink.style.display = "none";
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+    }
+  });
+</script>
+
+{% endblock %}
