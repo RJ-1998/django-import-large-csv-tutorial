@@ -1,11 +1,14 @@
-from starwars.utils import ImportUtils
-from django.contrib import admin
-from starwars import models
-from import_export.admin import ImportExportModelAdmin
-from django.shortcuts import render
-from django import forms
-from django.http import HttpResponse
 import json
+
+from django.http import HttpResponse
+from django.contrib import admin
+from django import forms
+from django.shortcuts import render
+
+from import_export.admin import ImportExportModelAdmin
+
+from starwars.utils import ImportUtils
+from starwars import models
 
 # Register your models here.
 
@@ -61,4 +64,42 @@ class CharactersAdmin(ImportExportModelAdmin, admin.ModelAdmin):
                    "endpoint": "/admin/starwars/characters/import/"}
         return render(
             request, "admin/import_starwars_characters.html", context
+        )
+
+    # global variables to improve performance
+    export_qs = None
+    total_count = 0
+    characters = []
+
+    def export_action(self, request):
+        if request.method == 'POST':
+            offset = json.loads(request.POST.get('offset'))
+            limit = json.loads(request.POST.get('limit'))
+            self.characters = []
+            if not self.export_qs:
+                self.export_qs = models.Characters.objects.all().values_list("name", "height", "mass", "birth_year", "gender")
+
+            for obj in self.export_qs[offset:limit]:
+                self.characters.append({
+                    "name": obj[0],
+                    "height": obj[1],
+                    "mass": obj[2],
+                    "birth_year": obj[3],
+                    "gender": obj[4]
+                })
+
+            context = {
+                "results": self.characters
+            }
+            return HttpResponse(json.dumps(context), content_type="application/json")
+
+        # define the queryset you want to export and get the count of rows
+        self.total_count = models.Characters.objects.all().count()
+        context = {"total_count": self.total_count, "form_title": "Export Characters to csv file",
+                   "description": "",
+                   "headers": ["Name", "Height", "Mass", "Birth Year", "Gender"],
+                   "endpoint": "/admin/starwars/characters/export/",
+                   "fileName": "starwars_characters"}
+        return render(
+            request, "admin/export_starwars_characters.html", context
         )
