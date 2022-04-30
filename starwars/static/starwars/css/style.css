@@ -1,81 +1,80 @@
 table {
-    border-collapse: collapse;
-    border-spacing: 0;
-    width: 100%;
-    border: 1px solid #ddd;
+  border-collapse: collapse;
+  border-spacing: 0;
+  width: 100%;
+  border: 1px solid #ddd;
+}
+
+th,
+td {
+  text-align: left;
+  padding: 16px;
+}
+
+tr:nth-child(even) {
+  background-color: #f2f2f2;
+}
+
+.checkpoint {
+  cursor: pointer;
+  color: #417690;
+  font-weight: bold;
+}
+
+.loader {
+  margin: 0 auto;
+  border: 8px solid #f3f3f3;
+  border-radius: 50%;
+  border-top: 8px solid #3498db;
+  width: 40px;
+  height: 40px;
+  -webkit-animation: spin 2s linear infinite; /* Safari */
+  animation: spin 2s linear infinite;
+}
+/* Safari */
+@-webkit-keyframes spin {
+  0% {
+    -webkit-transform: rotate(0deg);
   }
-  
-  th,
-  td {
-    text-align: left;
-    padding: 16px;
+  100% {
+    -webkit-transform: rotate(360deg);
   }
-  
-  tr:nth-child(even) {
-    background-color: #f2f2f2;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
   }
-  
-  .checkpoint {
-    cursor: pointer;
-    color: #417690;
-    font-weight: bold;
+  100% {
+    transform: rotate(360deg);
   }
-  
-  .loader {
-    margin: 0 auto;
-    border: 8px solid #f3f3f3;
-    border-radius: 50%;
-    border-top: 8px solid #3498db;
-    width: 40px;
-    height: 40px;
-    -webkit-animation: spin 2s linear infinite; /* Safari */
-    animation: spin 2s linear infinite;
-  }
-  /* Safari */
-  @-webkit-keyframes spin {
-    0% {
-      -webkit-transform: rotate(0deg);
-    }
-    100% {
-      -webkit-transform: rotate(360deg);
-    }
-  }
-  
-  @keyframes spin {
-    0% {
-      transform: rotate(0deg);
-    }
-    100% {
-      transform: rotate(360deg);
-    }
-  }
-  
-  .downloadBtn {
-    cursor: pointer;
-    border: none;
-    padding: 1%;
-    color: #fff;
-    background-color: #417690;
-  }
-  .uploadBtn {
-    cursor: pointer;
-    border: none;
-    padding: 1%;
-    color: #fff;
-    background-color: #417690;
-  }
-  .uploadBtn:disabled {
-    border: none;
-    padding: 1%;
-    color: #fff;
-    background-color: #cdcdcd;
-  }
-  .cancelBtn {
-    cursor: pointer;
-    margin-left: 1%;
-    border: none;
-    padding: 1%;
-    color: #fff;
-    background-color: #eb3030;
-  }
-  
+}
+
+.downloadBtn {
+  cursor: pointer;
+  border: none;
+  padding: 1%;
+  color: #fff;
+  background-color: #417690;
+}
+.uploadBtn {
+  cursor: pointer;
+  border: none;
+  padding: 1%;
+  color: #fff;
+  background-color: #417690;
+}
+.uploadBtn:disabled {
+  border: none;
+  padding: 1%;
+  color: #fff;
+  background-color: #cdcdcd;
+}
+.cancelBtn {
+  cursor: pointer;
+  margin-left: 1%;
+  border: none;
+  padding: 1%;
+  color: #fff;
+  background-color: #eb3030;
+}

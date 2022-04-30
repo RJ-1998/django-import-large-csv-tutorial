@@ -1,0 +1,57 @@
+table {
+    border-collapse: collapse;
+    border-spacing: 0;
+    width: 100%;
+    border: 1px solid #ddd;
+}
+
+th,
+td {
+    text-align: left;
+    padding: 16px;
+}
+
+tr:nth-child(even) {
+    background-color: #f2f2f2;
+}
+
+th {
+    background-color: #417690;
+    position: sticky;
+    top:0;
+    z-index:1;
+    color:white;
+}
+
+table tbody {
+    display: table;
+    width: "100%";
+}
+
+.downloadBtn {
+    cursor: pointer;
+    border: none;
+    padding: 1%;
+    color: #fff;
+    background-color: #417690;
+}
+
+.uploadBtn {
+    cursor: pointer;
+    border: none;
+    padding: 1%;
+    color: #fff;
+    background-color: #417690;
+}
+.page_header_text {
+    font-size: 22px;
+    color:#7e7e7e;
+    font-weight: lighter;
+}
+
+.parent_flex_container {
+    display: flex;
+    justify-content: space-between;
+    align-content: center;
+    margin-bottom: 1em;
+}
