@@ -1,0 +1,138 @@
+{% extends 'admin/base_site.html' %} {% load static %} {% block content %}
+<html lang="en">
+
+<head>
+    <!-- load codemirror base javascript file and jquery to make http calls -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="{% static 'starwars/js/codemirror.js' %}"></script>
+    <!-- load codemirror theme and some custom css-->
+    <link rel="stylesheet" href="{% static 'starwars/css/my_live_editor.css' %}" />
+    <link href="{% static 'starwars/css/codemirror.css' %}" type="text/css" rel="stylesheet" />
+    <link href="{% static 'starwars/css/dracula.css' %}" rel="stylesheet" />
+    <!-- load remaining addons for SQL editor -->
+    <script src="{% static 'starwars/js/active-line.js' %}"></script>
+    <script src="{% static 'starwars/js/matchbrackets.js' %}"></script>
+    <script src="{% static 'starwars/js/closebrackets.js' %}"></script>
+    <script src="{% static 'starwars/js/comment.js' %}"></script>
+    <script src="{% static 'starwars/js/sql.js' %}"></script>
+</head>
+<div class="parent_flex_container">
+    <span class="page_header_text">SQL code editor</span>
+    <button class="uploadBtn" id="submit">Run Query</button>
+</div>
+<!-- SQL editor will be a textarea -->
+<form method="POST" action="" id="editor-form" enctype="multipart/form-data">
+    {% csrf_token %}
+    <textarea id="editor"></textarea>
+</form>
+<br />
+<div class="parent_flex_container">
+    <h2>Query results <span id="rowsCount"></span></h2>
+    <button class="downloadBtn" id="downloadReport" style="display:none">
+        Download Results
+    </button>
+</div>
+<table style="display:block;max-height:60vh;overflow-x: scroll;white-space: nowrap;"></table>
+{{endpoint|json_script:"endpoint"}}
+<script>
+    $(document).ready(() => {
+        let endpoint = JSON.parse($("#endpoint").text());
+        // codemirror editor configuration
+        var editor = CodeMirror.fromTextArea(document.getElementById("editor"), {
+            mode: "sql",
+            theme: "dracula",
+            lineNumbers: true,
+            styleActiveLine: true,
+            matchBrackets: true,
+            autoCloseBrackets: { highlightNonMatching: true },
+        });
+        // detect event whenn user want to comment some code
+        document.addEventListener("keydown", function (event) {
+            if (event.ctrlKey && event.key === "/") {
+                editor.toggleComment();
+            }
+        });
+        // call the api when user clicks on Run Query button
+        $("#submit").click((e) => {
+            e.preventDefault()
+            // make a POST request to django
+            $.ajax({
+                type: "POST",
+                dataType: "json",
+                url: endpoint,
+                data: {
+                    // grab the query written in the editor
+                    query: JSON.stringify(editor.getDoc().getValue()),
+                    csrfmiddlewaretoken: $("input[name=csrfmiddlewaretoken]").val(),
+                    action: "post"
+                },
+                beforeSend: () => {
+                    // clear the output table before each submission
+                    $("table th").remove()
+                    $("table tr").remove()
+                },
+                success: (data) => {
+                    if (data.error) {
+                        $("table").append(`<th>An Error Occurred</th>`)
+                        $("table").append(`<tr><td>${data.error}</td></tr>`)
+                    }
+                    else {
+                        $("#rowsCount").text(`: ${data.rows.length} rows returned`)
+                        // populate table headers
+                        data.columns.forEach((obj) => {
+                            $("table").append(`<th>${obj}</th>`);
+                        });
+                        // populate table rows
+                        data.rows.forEach((obj) => {
+                            let cols = "";
+                            Object.entries(obj).map(([key, val]) => {
+                                cols = cols + `<td>${val}</td>`;
+                            });
+                            $("table").append(`<tr class="child">${cols}</tr>`);
+                        });
+                    }
+                },
+                complete: () => {
+                    $("#downloadReport").show();
+                },
+            })
+        });
+        // handle download report event
+        $("#downloadReport").click(() => {
+            var html = document.querySelector("table").outerHTML;
+            export_table_to_csv(html, "query_results.csv");
+        });
+        function export_table_to_csv(html, filename) {
+            var csv = [];
+            var rows = document.querySelectorAll("table tr");
+
+            for (var i = 0; i < rows.length; i++) {
+                var row = [];
+                var cols = rows[i].querySelectorAll("td, th");
+
+                for (var j = 0; j < cols.length; j++) row.push(cols[j].innerText);
+
+                csv.push(row.join(","));
+            }
+            download_csv(csv.join("\n"), filename);
+        }
+
+        function download_csv(csv, filename) {
+            var csvFile;
+            var downloadLink;
+
+            csvFile = new Blob([csv], { type: "text/csv" });
+            downloadLink = document.createElement("a");
+            downloadLink.download = filename;
+            downloadLink.href = window.URL.createObjectURL(csvFile);
+            downloadLink.style.display = "none";
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+        }
+    });
+</script>
+</body>
+
+</html>
+
+{% endblock %}

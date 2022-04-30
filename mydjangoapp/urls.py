@@ -16,6 +16,9 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 
+from starwars.views import live_sql_editor
+
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path('admin/live-editor/', live_sql_editor, name="sql_editor"),
+    path('admin/', admin.site.urls)
 ]
